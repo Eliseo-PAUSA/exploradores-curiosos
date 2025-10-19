@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Exploradores Curiosos</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root { color-scheme: light; }
+    body { font-family: 'Fredoka', system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background-color: #F0F9FF; }
+    @media (prefers-reduced-motion: no-preference) {
+      #character { animation: float 6s ease-in-out infinite; }
+    }
+    @keyframes float { 0% { transform: translateY(0) } 50% { transform: translateY(-20px) } 100% { transform: translateY(0) } }
+    .mic-button.listening { animation: pulse 1.5s infinite; }
+    @keyframes pulse { 0% { box-shadow: 0 0 0 0 rgba(251,191,36,.7) } 70% { box-shadow: 0 0 0 20px rgba(251,191,36,0) } 100% { box-shadow: 0 0 0 0 rgba(251,191,36,0) } }
+    .category-card { transition: transform .3s ease, box-shadow .3s ease; }
+    .category-card:hover { transform: translateY(-10px); box-shadow: 0 20px 25px -5px rgb(0 0 0 / .1), 0 8px 10px -6px rgb(0 0 0 / .1); }
+    .visually-hidden { position: absolute !important; height: 1px; width: 1px; overflow: hidden; clip: rect(1px, 1px, 1px, 1px); white-space: nowrap; }
+  </style>
+</head>
+<body class="text-gray-800">
+  <a href="#main" class="sr-only focus:not-sr-only focus:absolute focus:top-2 focus:left-2 bg-blue-600 text-white px-3 py-1 rounded">Saltar al contenido</a>
+  <div id="app-container" class="min-h-screen flex flex-col items-center justify-center p-4 transition-colors duration-500" aria-live="polite">
+
+    <!-- Barra superior de controles -->
+    <header class="w-full max-w-4xl flex items-center justify-between mb-4" role="banner">
+      <div class="flex items-center gap-2">
+        <button id="btn-reduce-motion" class="text-sm bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded" aria-pressed="false">Animación: on</button>
+        <button id="btn-sound" class="text-sm bg-gray-200 hover:bg-gray-300 px-3 py-1 rounded" aria-pressed="true">Voz: on</button>
+      </div>
+      <div class="flex items-center gap-2">
+        <label class="text-sm" for="voice-select">Voz</label>
+        <select id="voice-select" class="text-sm bg-white border rounded px-2 py-1"></select>
+        <button id="stop-tts" class="text-sm bg-rose-500 hover:bg-rose-600 text-white px-3 py-1 rounded">Detener voz</button>
+      </div>
+    </header>
+
+    <main id="main" class="w-full" role="main">
+      <!-- Pantalla de Inicio -->
+      <section id="home-screen" class="w-full max-w-2xl text-center mx-auto" tabindex="-1" aria-labelledby="home-title">
+        <h1 id="home-title" class="text-4xl md:text-6xl font-bold text-blue-600 mb-4">Exploradores Curiosos</h1>
+        <p class="text-lg md:text-xl text-gray-600 mb-8">Hola, soy Curio. ¿Qué te gustaría saber hoy?</p>
+
+        <!-- Personaje -->
+        <div class="mb-8" aria-hidden="true">
+          <svg id="character" class="w-48 h-48 mx-auto" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+            <path fill="#FFD15C" d="M49.6,-59.8C64,-48.9,75.3,-33.2,79.5,-15.5C83.7,2.2,80.7,21.8,71.2,38.2C61.7,54.6,45.6,67.8,27.8,75.5C10,83.3,-9.6,85.7,-27.2,79.9C-44.8,74.1,-60.4,60.2,-69.8,43.7C-79.1,27.2,-82.2,8.1,-78.9,-9.2C-75.7,-26.5,-66,-42.1,-52.7,-52.8C-39.4,-63.5,-22.4,-69.3,-4.2,-67.9C14,-66.5,29.9,-67.7,49.6,-59.8Z" transform="translate(100 100)" />
+            <circle cx="85" cy="80" r="10" fill="white"/>
+            <circle cx="115" cy="80" r="10" fill="white"/>
+            <circle cx="87" cy="82" r="5" fill="black"/>
+            <circle cx="117" cy="82" r="5" fill="black"/>
+            <path d="M 90 110 Q 100 125 110 110" stroke="black" fill="transparent" stroke-width="4" stroke-linecap="round"/>
+          </svg>
+        </div>
+
+        <!-- Entrada por voz o texto -->
+        <div class="flex flex-col items-center gap-4">
+          <button id="mic-button" class="mic-button bg-amber-400 hover:bg-amber-500 text-white rounded-full p-6 shadow-lg transition-transform hover:scale-110 focus:outline-none" aria-label="Hablar con Curio" title="Hablar con Curio">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M7 4a3 3 0 016 0v4a3 3 0 11-6 0V4zm5 10.5a.5.5 0 01.5.5v.5a.5.5 0 01-.5.5h-3a.5.5 0 01-.5-.5v-.5a.5.5 0 01.5-.5h3z" clip-rule="evenodd" />
+              <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-8a1 1 0 11-2 0V6a1 1 0 112 0v4zm4 0a1 1 0 11-2 0V6a1 1 0 112 0v4z" clip-rule="evenodd" />
+            </svg>
+          </button>
+          <p id="listening-status" class="h-6 text-gray-500" aria-live="assertive"></p>
+          <div class="w-full max-w-xl flex items-center gap-2">
+            <label for="text-question" class="visually-hidden">Escribe tu pregunta</label>
+            <input id="text-question" type="text" inputmode="search" autocomplete="off" placeholder="O escribe tu pregunta aquí" class="flex-1 bg-white border rounded-xl px-4 py-3 shadow focus:outline-none focus:ring-2 focus:ring-blue-400" />
+            <button id="ask-text" class="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-3 rounded-xl shadow">Preguntar</button>
+          </div>
+        </div>
+
+        <div class="mt-8">
+          <button id="explore-button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-3 px-6 rounded-full shadow-md transition-transform hover:scale-105">O explora por temas</button>
+        </div>
+      </section>
+
+      <!-- Pantalla de Categorías -->
+      <section id="category-screen" class="hidden w-full max-w-4xl text-center mx-auto" tabindex="-1" aria-labelledby="cat-title">
+        <button id="back-to-home-1" class="absolute top-4 left-4 bg-gray-200 hover:bg-gray-300 text-gray-700 p-3 rounded-full shadow-md" aria-label="Volver a inicio">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+        </button>
+        <h2 id="cat-title" class="text-3xl md:text-5xl font-bold text-blue-600 mb-8">Elige un tema</h2>
+        <div id="category-grid" class="grid grid-cols-2 md:grid-cols-3 gap-6" role="list"></div>
+      </section>
+
+      <!-- Pantalla de Preguntas de Categoría -->
+      <section id="question-list-screen" class="hidden w-full max-w-2xl mx-auto" tabindex="-1" aria-labelledby="ql-title">
+        <button id="back-to-categories" class="absolute top-4 left-4 bg-gray-200 hover:bg-gray-300 text-gray-700 p-3 rounded-full shadow-md" aria-label="Volver a categorías">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+        </button>
+        <h2 id="ql-title" class="text-3xl md:text-4xl font-bold text-center mb-8">Preguntas sobre…</h2>
+        <div id="question-list" class="space-y-4" role="list"></div>
+      </section>
+
+      <!-- Pantalla de Respuesta -->
+      <section id="answer-screen" class="hidden w-full max-w-2xl text-center mx-auto" tabindex="-1" aria-labelledby="ans-title">
+        <button id="back-to-home-2" class="absolute top-4 left-4 bg-gray-200 hover:bg-gray-300 text-gray-700 p-3 rounded-full shadow-md" aria-label="Volver a inicio">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+        </button>
+        <div class="bg-white rounded-3xl shadow-xl p-6 md:p-8">
+          <h3 id="ans-title" class="text-2xl md:text-3xl font-semibold text-gray-700 mb-6"></h3>
+          <img id="answer-image" src="https://placehold.co/600x400/A7F3D0/333333?text=Imagen+Divertida" alt="" class="w-full h-auto max-h-80 object-cover rounded-2xl mb-6 shadow-md" />
+          <p id="answer-text" class="text-xl md:text-2xl text-gray-600 leading-relaxed"></p>
+        </div>
+        <button id="ask-another-button" class="mt-8 bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-full shadow-md transition-transform hover:scale-105">Hacer otra pregunta</button>
+      </section>
+
+      <!-- Mensaje de Error/No Entendido -->
+      <section id="not-found-screen" class="hidden w-full max-w-lg text-center bg-white p-8 rounded-2xl shadow-lg mx-auto" tabindex="-1" aria-labelledby="nf-title">
+        <h2 id="nf-title" class="text-2xl font-bold text-red-500 mb-4">Oh, vaya</h2>
+        <p class="text-lg text-gray-600 mb-6">No he entendido muy bien tu pregunta, ¿podrías intentarlo de nuevo?</p>
+        <button id="try-again-button" class="bg-blue-500 hover:bg-blue-600 text-white font-bold py-2 px-6 rounded-full">Intentar de nuevo</button>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    // Persistencia sencilla
+    const store = {
+      get k() { return 'exploradores-curiosos:v1'; },
+      get() { try { return JSON.parse(localStorage.getItem(this.k)) || {}; } catch { return {}; } },
+      set(patch) { const v = { ...this.get(), ...patch }; localStorage.setItem(this.k, JSON.stringify(v)); },
+      clear() { localStorage.removeItem(this.k); }
+    };
+
+    // Base de datos QA
+    const qaDatabase = [
+      { id: 1, keywords: ['cielo','azul'], question: '¿Por qué el cielo es azul?', answer: 'El cielo es azul porque la luz del sol se esparce en el aire. Es como si el cielo eligiera su color favorito.', image: 'https://placehold.co/600x400/818CF8/FFFFFF?text=Cielo+Azul', category: 'Naturaleza', bgColor: '#BFDBFE', alt: 'Cielo azul con nubes suaves' },
+      { id: 2, keywords: ['perros','ladran','ladrar'], question: '¿Por qué los perros ladran?', answer: 'Los perros ladran para hablar con nosotros y con otros perros. Pueden decir hola, estoy feliz o cuidado.', image: 'https://placehold.co/600x400/FDBA74/FFFFFF?text=Perrito+Ladrando', category: 'Animales', bgColor: '#FEF3C7', alt: 'Perro pequeño ladrando en un parque' },
+      { id: 3, keywords: ['jirafas','comen','giraffa','jirafa'], question: '¿Qué comen las jirafas?', answer: 'Las jirafas usan su cuello largo para comer hojas de los árboles altos. Son como escaleras con patitas.', image: 'https://placehold.co/600x400/A3E635/FFFFFF?text=Jirafa+Comiendo', category: 'Animales', bgColor: '#ECFCCB', alt: 'Jirafa comiendo hojas de un árbol' },
+      { id: 4, keywords: ['luna','brilla','luminosa'], question: '¿Por qué brilla la luna?', answer: 'La luna no tiene luz propia. Brilla porque el sol la ilumina, como una gran linterna en el espacio.', image: 'https://placehold.co/600x400/6B7280/FFFFFF?text=Luna+Brillante', category: 'Espacio', bgColor: '#E5E7EB', alt: 'Luna brillante en cielo nocturno' },
+      { id: 5, keywords: ['plantas','verdes','clorofila'], question: '¿Por qué las plantas son verdes?', answer: 'Las plantas son verdes por la clorofila, que les ayuda a usar la luz del sol como alimento.', image: 'https://placehold.co/600x400/4ADE80/FFFFFF?text=Hojita+Verde', category: 'Naturaleza', bgColor: '#DCFCE7', alt: 'Hoja verde iluminada por el sol' },
+      { id: 6, keywords: ['estrellas','titilan','parpadean','parpadear'], question: '¿Por qué parpadean las estrellas?', answer: 'Las estrellas parecen parpadear porque su luz viaja muy lejos y atraviesa el aire de nuestro planeta, que se mueve mucho.', image: 'https://placehold.co/600x400/3B3B3B/FFFFFF?text=Estrellas+Lejanas', category: 'Espacio', bgColor: '#D1D5DB', alt: 'Cielo estrellado con destellos' }
+    ];
+
+    const categories = {
+      'Animales': { emoji: '🐶', color: 'bg-orange-300', questions: qaDatabase.filter(q => q.category === 'Animales') },
+      'Naturaleza': { emoji: '🌳', color: 'bg-green-300', questions: qaDatabase.filter(q => q.category === 'Naturaleza') },
+      'Espacio': { emoji: '🚀', color: 'bg-indigo-300', questions: qaDatabase.filter(q => q.category === 'Espacio') }
+    };
+
+    // DOM
+    const appContainer = document.getElementById('app-container');
+    const homeScreen = document.getElementById('home-screen');
+    const categoryScreen = document.getElementById('category-screen');
+    const questionListScreen = document.getElementById('question-list-screen');
+    const answerScreen = document.getElementById('answer-screen');
+    const notFoundScreen = document.getElementById('not-found-screen');
+
+    const micButton = document.getElementById('mic-button');
+    const listeningStatus = document.getElementById('listening-status');
+    const exploreButton = document.getElementById('explore-button');
+
+    const categoryGrid = document.getElementById('category-grid');
+    const questionList = document.getElementById('question-list');
+    const questionListTitle = document.getElementById('ql-title');
+
+    const questionAsked = document.getElementById('ans-title');
+    const answerImage = document.getElementById('answer-image');
+    const answerText = document.getElementById('answer-text');
+
+    const btnReduceMotion = document.getElementById('btn-reduce-motion');
+    const btnSound = document.getElementById('btn-sound');
+    const voiceSelect = document.getElementById('voice-select');
+    const stopTtsBtn = document.getElementById('stop-tts');
+    const textInput = document.getElementById('text-question');
+    const askTextBtn = document.getElementById('ask-text');
+
+    // Navegación y enfoque accesible
+    function showScreen(screen) {
+      for (const el of [homeScreen, categoryScreen, questionListScreen, answerScreen, notFoundScreen]) el.classList.add('hidden');
+      screen.classList.remove('hidden');
+      // gestionar foco
+      setTimeout(() => { screen.focus(); }, 0);
+    }
+
+    function applyBg(color) { appContainer.style.backgroundColor = color || '#F0F9FF'; }
+
+    // STT
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    let recognition = null;
+    if (SpeechRecognition) {
+      recognition = new SpeechRecognition();
+      recognition.lang = 'es-ES';
+      recognition.continuous = false;
+      recognition.interimResults = false;
+      recognition.onstart = () => { listeningStatus.textContent = 'Te escucho'; micButton.classList.add('listening'); };
+      recognition.onend = () => { listeningStatus.textContent = ''; micButton.classList.remove('listening'); };
+      recognition.onerror = (e) => { listeningStatus.textContent = 'No te oí bien, prueba de nuevo'; console.warn('STT error', e.error); };
+      recognition.onresult = (e) => {
+        const transcript = (e.results?.[0]?.[0]?.transcript || '').toLowerCase().trim();
+        if (transcript) handleQuery(transcript);
+      };
+    } else {
+      micButton.setAttribute('disabled', 'true');
+      micButton.classList.add('opacity-50', 'cursor-not-allowed');
+      listeningStatus.textContent = 'Tu navegador no soporta reconocimiento de voz. Usa el cuadro de texto.';
+    }
+
+    micButton.addEventListener('click', () => { if (recognition) try { recognition.start(); } catch {} });
+
+    // TTS
+    const tts = {
+      synth: window.speechSynthesis,
+      voice: null,
+      enabled: true,
+      rate: 0.95,
+      pitch: 1.1,
+      speak(text) {
+        if (!this.enabled || !this.synth) return;
+        this.synth.cancel();
+        const u = new SpeechSynthesisUtterance(text);
+        u.lang = 'es-ES';
+        u.rate = this.rate;
+        u.pitch = this.pitch;
+        if (this.voice) u.voice = this.voice;
+        this.synth.speak(u);
+      },
+      stop() { if (this.synth) this.synth.cancel(); }
+    };
+
+    function populateVoices() {
+      const voices = window.speechSynthesis?.getVoices?.() || [];
+      voiceSelect.innerHTML = '';
+      const esVoices = voices.filter(v => v.lang?.toLowerCase().startsWith('es'));
+      const list = esVoices.length ? esVoices : voices;
+      list.forEach((v, i) => {
+        const opt = document.createElement('option');
+        opt.value = v.name; opt.textContent = `${v.name} (${v.lang})`;
+        voiceSelect.appendChild(opt);
+        if (i === 0) tts.voice = v;
+      });
+    }
+
+    if ('speechSynthesis' in window) {
+      populateVoices();
+      window.speechSynthesis.onvoiceschanged = populateVoices;
+    }
+
+    btnSound.addEventListener('click', () => {
+      tts.enabled = !tts.enabled;
+      btnSound.setAttribute('aria-pressed', String(tts.enabled));
+      btnSound.textContent = `Voz: ${tts.enabled ? 'on' : 'off'}`;
+      if (!tts.enabled) tts.stop();
+      store.set({ sound: tts.enabled });
+    });
+
+    stopTtsBtn.addEventListener('click', () => tts.stop());
+
+    voiceSelect.addEventListener('change', () => {
+      const voices = window.speechSynthesis?.getVoices?.() || [];
+      tts.voice = voices.find(v => v.name === voiceSelect.value) || null;
+      store.set({ voiceName: tts.voice?.name || null });
+    });
+
+    // Texto a pregunta
+    askTextBtn.addEventListener('click', () => {
+      const q = textInput.value.trim(); if (!q) return;
+      handleQuery(q.toLowerCase());
+    });
+    textInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') askTextBtn.click(); });
+
+    // Matching tolerante a errores
+    function levenshtein(a, b) {
+      if (a === b) return 0; if (!a) return b.length; if (!b) return a.length;
+      const v0 = new Array(b.length + 1).fill(0); const v1 = new Array(b.length + 1).fill(0);
+      for (let i = 0; i <= b.length; i++) v0[i] = i;
+      for (let i = 0; i < a.length; i++) {
+        v1[0] = i + 1;
+        for (let j = 0; j < b.length; j++) {
+          const cost = a[i] === b[j] ? 0 : 1;
+          v1[j + 1] = Math.min(v1[j] + 1, v0[j + 1] + 1, v0[j] + cost);
+        }
+        for (let j = 0; j <= b.length; j++) v0[j] = v1[j];
+      }
+      return v1[b.length];
+    }
+
+    function scoreMatch(text, item) {
+      const tokens = text.normalize('NFD').replace(/[\p{Diacritic}]/gu,'').split(/[^\p{L}\p{N}]+/u).filter(Boolean);
+      let score = 0;
+      for (const kw of item.keywords) {
+        const kwN = kw.normalize('NFD').replace(/[\p{Diacritic}]/gu,'');
+        for (const t of tokens) {
+          const d = levenshtein(t, kwN);
+          if (t.includes(kwN) || kwN.includes(t)) score += 2; else if (d <= 2) score += 1; // tolera pequeñas faltas
+        }
+      }
+      return score;
+    }
+
+    function bestQaFor(text) {
+      let best = null; let bestScore = 0;
+      for (const item of qaDatabase) {
+        const s = scoreMatch(text, item);
+        if (s > bestScore) { best = item; bestScore = s; }
+      }
+      return bestScore > 0 ? best : null;
+    }
+
+    // Mostrar respuesta
+    function displayAnswer(item) {
+      questionAsked.textContent = item.question;
+      answerImage.src = item.image; answerImage.alt = item.alt || '';
+      answerImage.onerror = () => { answerImage.src = 'https://placehold.co/600x400/cccccc/333333?text=Error+al+cargar'; answerImage.alt = 'Imagen no disponible'; };
+      answerText.textContent = item.answer;
+      applyBg(item.bgColor);
+      showScreen(answerScreen);
+      if (tts.enabled) tts.speak(item.answer);
+      store.set({ lastId: item.id });
+    }
+
+    function handleQuery(text) {
+      const item = bestQaFor(text);
+      if (item) displayAnswer(item); else { showScreen(notFoundScreen); if (tts.enabled) tts.speak('Lo siento, no he entendido la pregunta. ¿Puedes repetirla?'); }
+    }
+
+    // Categorías
+    function loadCategories() {
+      categoryGrid.innerHTML = '';
+      for (const key in categories) {
+        const category = categories[key];
+        const card = document.createElement('button');
+        card.className = `category-card ${category.color} p-6 rounded-2xl shadow-lg cursor-pointer flex flex-col items-center justify-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-600`;
+        card.setAttribute('role','listitem');
+        card.innerHTML = `<span class="text-6xl mb-4" aria-hidden="true">${category.emoji}</span><span class="text-2xl font-bold text-white">${key}</span>`;
+        card.addEventListener('click', () => showQuestionsForCategory(key));
+        categoryGrid.appendChild(card);
+      }
+    }
+
+    function showQuestionsForCategory(categoryKey) {
+      const category = categories[categoryKey];
+      questionListTitle.textContent = `Preguntas sobre ${categoryKey}`;
+      questionList.innerHTML = '';
+      category.questions.forEach(q => {
+        const btn = document.createElement('button');
+        btn.className = 'w-full text-left bg-white p-4 rounded-lg shadow-md hover:bg-gray-100 transition-colors text-lg focus:outline-none focus:ring-2 focus:ring-blue-400';
+        btn.textContent = q.question;
+        btn.addEventListener('click', () => displayAnswer(q));
+        btn.setAttribute('role','listitem');
+        questionList.appendChild(btn);
+      });
+      showScreen(questionListScreen);
+    }
+
+    // Preferencias de movimiento
+    btnReduceMotion.addEventListener('click', () => {
+      const on = btnReduceMotion.getAttribute('aria-pressed') !== 'true';
+      btnReduceMotion.setAttribute('aria-pressed', String(on));
+      btnReduceMotion.textContent = `Animación: ${on ? 'on' : 'off'}`;
+      const character = document.getElementById('character');
+      if (on) character.style.animation = 'float 6s ease-in-out infinite'; else character.style.animation = 'none';
+      store.set({ anim: on });
+    });
+
+    // Navegación
+    document.getElementById('back-to-home-1').addEventListener('click', () => { applyBg('#F0F9FF'); showScreen(homeScreen); });
+    document.getElementById('back-to-home-2').addEventListener('click', () => { applyBg('#F0F9FF'); showScreen(homeScreen); });
+    document.getElementById('ask-another-button').addEventListener('click', () => { applyBg('#F0F9FF'); showScreen(homeScreen); });
+    document.getElementById('try-again-button').addEventListener('click', () => { showScreen(homeScreen); });
+    document.getElementById('back-to-categories').addEventListener('click', () => { showScreen(categoryScreen); });
+
+    exploreButton.addEventListener('click', () => { loadCategories(); showScreen(categoryScreen); });
+
+    // Cargar preferencias guardadas
+    (function initPrefs() {
+      const p = store.get();
+      if (typeof p.sound === 'boolean') { tts.enabled = p.sound; btnSound.textContent = `Voz: ${tts.enabled ? 'on' : 'off'}`; btnSound.setAttribute('aria-pressed', String(tts.enabled)); }
+      if (p.voiceName && 'speechSynthesis' in window) {
+        const assignVoice = () => {
+          const voices = speechSynthesis.getVoices();
+          const v = voices.find(v => v.name === p.voiceName);
+          if (v) { tts.voice = v; voiceSelect.value = v.name; }
+        };
+        if (speechSynthesis.getVoices().length) assignVoice(); else speechSynthesis.onvoiceschanged = assignVoice;
+      }
+      if (typeof p.anim === 'boolean') {
+        const character = document.getElementById('character');
+        const on = p.anim; btnReduceMotion.setAttribute('aria-pressed', String(on)); btnReduceMotion.textContent = `Animación: ${on ? 'on' : 'off'}`;
+        character.style.animation = on ? 'float 6s ease-in-out infinite' : 'none';
+      }
+      if (p.lastId) {
+        const last = qaDatabase.find(x => x.id === p.lastId);
+        if (last) { /* opcional: mostrar última respuesta al volver */ }
+      }
+    })();
+
+    // Inicializar
+    showScreen(homeScreen);
+  </script>
+</body>
+</html>
+
